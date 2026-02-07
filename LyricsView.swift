@@ -77,7 +77,7 @@ struct LyricsView: View {
                         }
                         .padding(.vertical, 24)
                     }
-                    .onChange(of: viewModel.activeLineID) { _, activeID in
+                    .onChange(of: viewModel.activeLineID) { activeID in
                         guard let activeID else { return }
                         withAnimation(.easeInOut(duration: 0.25)) {
                             proxy.scrollTo(activeID, anchor: .center)
