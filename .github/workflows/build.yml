@@ -1,0 +1,79 @@
+name: iOS Unsigned Build
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+
+      - name: Resolve project and scheme
+        id: resolve
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PROJECT_PATH="$(find . -maxdepth 3 -name "*.xcodeproj" | head -n 1)"
+          if [[ -z "${PROJECT_PATH}" ]]; then
+            echo "No .xcodeproj found."
+            exit 1
+          fi
+
+          PROJECT_NAME="$(basename "${PROJECT_PATH}" .xcodeproj)"
+          SCHEME_NAME="$(xcodebuild -project "${PROJECT_PATH}" -list | awk '/Schemes:/ {getline; gsub(/^[ \t]+/, ""); print; exit}')"
+          if [[ -z "${SCHEME_NAME}" ]]; then
+            SCHEME_NAME="${PROJECT_NAME}"
+          fi
+
+          BUILD_DIR="${RUNNER_TEMP}/build"
+          echo "project=${PROJECT_PATH}" >> "$GITHUB_OUTPUT"
+          echo "scheme=${SCHEME_NAME}" >> "$GITHUB_OUTPUT"
+          echo "build_dir=${BUILD_DIR}" >> "$GITHUB_OUTPUT"
+
+      - name: Unsigned build
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project "${{ steps.resolve.outputs.project }}" \
+            -scheme "${{ steps.resolve.outputs.scheme }}" \
+            -configuration Release \
+            -sdk iphonesimulator \
+            -destination "generic/platform=iOS Simulator" \
+            -derivedDataPath "${{ steps.resolve.outputs.build_dir }}" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            build
+
+      - name: Package .app artifact
+        id: package
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP_PATH="$(find "${{ steps.resolve.outputs.build_dir }}" -type d -name "*.app" | head -n 1)"
+          if [[ -z "${APP_PATH}" ]]; then
+            echo "No .app produced by build."
+            exit 1
+          fi
+
+          ARTIFACT_DIR="${RUNNER_TEMP}/artifacts"
+          mkdir -p "${ARTIFACT_DIR}"
+          cp -R "${APP_PATH}" "${ARTIFACT_DIR}/"
+          ditto -c -k --sequesterRsrc --keepParent "${APP_PATH}" "${ARTIFACT_DIR}/SERLyric.app.zip"
+
+          echo "artifact_dir=${ARTIFACT_DIR}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-unsigned-build
+          path: ${{ steps.package.outputs.artifact_dir }}
