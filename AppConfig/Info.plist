@@ -18,6 +18,11 @@
         <dict>
             <key>CFBundleIconName</key>
             <string>AppIcon</string>
+            <key>CFBundleIconFiles</key>
+            <array>
+                <string>Icon60@2x</string>
+                <string>Icon60@3x</string>
+            </array>
         </dict>
     </dict>
     <key>CFBundleIcons~ipad</key>
@@ -26,6 +31,12 @@
         <dict>
             <key>CFBundleIconName</key>
             <string>AppIcon</string>
+            <key>CFBundleIconFiles</key>
+            <array>
+                <string>Icon76</string>
+                <string>Icon76@2x</string>
+                <string>Icon83.5@2x</string>
+            </array>
         </dict>
     </dict>
     <key>CFBundleName</key>
