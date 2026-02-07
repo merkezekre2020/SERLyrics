@@ -33,11 +33,11 @@
 		A1B2C3D50000000800000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = AppConfig/Info.plist; sourceTree = SOURCE_ROOT; };
 		A1B2C3D50000000900000001 /* SERLyric.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SERLyric.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1B2C3D50000000A00000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		A1B2C3D50000000B00000001 /* Icon60@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = LegacyIcons/Icon60@2x.png; sourceTree = "<group>"; };
-		A1B2C3D50000000C00000001 /* Icon60@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = LegacyIcons/Icon60@3x.png; sourceTree = "<group>"; };
+		A1B2C3D50000000B00000001 /* Icon60@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "LegacyIcons/Icon60@2x.png"; sourceTree = "<group>"; };
+		A1B2C3D50000000C00000001 /* Icon60@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "LegacyIcons/Icon60@3x.png"; sourceTree = "<group>"; };
 		A1B2C3D50000000D00000001 /* Icon76.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = LegacyIcons/Icon76.png; sourceTree = "<group>"; };
-		A1B2C3D50000000E00000001 /* Icon76@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = LegacyIcons/Icon76@2x.png; sourceTree = "<group>"; };
-		A1B2C3D50000000F00000001 /* Icon83.5@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = LegacyIcons/Icon83.5@2x.png; sourceTree = "<group>"; };
+		A1B2C3D50000000E00000001 /* Icon76@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "LegacyIcons/Icon76@2x.png"; sourceTree = "<group>"; };
+		A1B2C3D50000000F00000001 /* Icon83.5@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "LegacyIcons/Icon83.5@2x.png"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
