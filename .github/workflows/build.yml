@@ -22,20 +22,33 @@ jobs:
         run: |
           set -euo pipefail
 
-          PROJECT_PATH="$(find . -maxdepth 3 -name "*.xcodeproj" | head -n 1)"
-          if [[ -z "${PROJECT_PATH}" ]]; then
-            echo "No .xcodeproj found."
+          WORKSPACE_PATH="$(find . -maxdepth 4 -name "*.xcworkspace" | head -n 1)"
+          PROJECT_PATH="$(find . -maxdepth 4 -name "*.xcodeproj" | head -n 1)"
+
+          if [[ -n "${WORKSPACE_PATH}" ]]; then
+            CONTAINER_FLAG="-workspace"
+            CONTAINER_PATH="${WORKSPACE_PATH}"
+            CONTAINER_NAME="$(basename "${WORKSPACE_PATH}" .xcworkspace)"
+          elif [[ -n "${PROJECT_PATH}" ]]; then
+            CONTAINER_FLAG="-project"
+            CONTAINER_PATH="${PROJECT_PATH}"
+            CONTAINER_NAME="$(basename "${PROJECT_PATH}" .xcodeproj)"
+          else
+            echo "No .xcworkspace or .xcodeproj found in repository."
+            echo "Commit your Xcode workspace/project files (typically <App>.xcworkspace and/or <App>.xcodeproj)."
+            echo "Repository root contents:"
+            ls -la
             exit 1
           fi
 
-          PROJECT_NAME="$(basename "${PROJECT_PATH}" .xcodeproj)"
-          SCHEME_NAME="$(xcodebuild -project "${PROJECT_PATH}" -list | awk '/Schemes:/ {getline; gsub(/^[ \t]+/, ""); print; exit}')"
+          SCHEME_NAME="$(xcodebuild ${CONTAINER_FLAG} "${CONTAINER_PATH}" -list | awk '/Schemes:/ {getline; gsub(/^[ \t]+/, ""); print; exit}')"
           if [[ -z "${SCHEME_NAME}" ]]; then
-            SCHEME_NAME="${PROJECT_NAME}"
+            SCHEME_NAME="${CONTAINER_NAME}"
           fi
 
           BUILD_DIR="${RUNNER_TEMP}/build"
-          echo "project=${PROJECT_PATH}" >> "$GITHUB_OUTPUT"
+          echo "container_flag=${CONTAINER_FLAG}" >> "$GITHUB_OUTPUT"
+          echo "container_path=${CONTAINER_PATH}" >> "$GITHUB_OUTPUT"
           echo "scheme=${SCHEME_NAME}" >> "$GITHUB_OUTPUT"
           echo "build_dir=${BUILD_DIR}" >> "$GITHUB_OUTPUT"
 
@@ -44,7 +57,7 @@ jobs:
         run: |
           set -euo pipefail
           xcodebuild \
-            -project "${{ steps.resolve.outputs.project }}" \
+            "${{ steps.resolve.outputs.container_flag }}" "${{ steps.resolve.outputs.container_path }}" \
             -scheme "${{ steps.resolve.outputs.scheme }}" \
             -configuration Release \
             -sdk iphonesimulator \
