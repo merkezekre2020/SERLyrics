@@ -58,6 +58,84 @@ jobs:
           echo "archive_path=${ARCHIVE_PATH}" >> "$GITHUB_OUTPUT"
           echo "ipa_dir=${IPA_DIR}" >> "$GITHUB_OUTPUT"
 
+      - name: Prepare App Icon assets
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SRC_ICON="./AppIcon-1024.png"
+          APPICON_DIR="./Assets.xcassets/AppIcon.appiconset"
+
+          if [[ ! -f "${SRC_ICON}" ]]; then
+            echo "Missing ${SRC_ICON}. Commit AppIcon-1024.png to repository root."
+            exit 1
+          fi
+
+          mkdir -p "${APPICON_DIR}"
+
+          cat > "./Assets.xcassets/Contents.json" <<'JSON'
+          {
+            "info" : {
+              "author" : "xcode",
+              "version" : 1
+            }
+          }
+          JSON
+
+          cat > "${APPICON_DIR}/Contents.json" <<'JSON'
+          {
+            "images" : [
+              { "idiom" : "iphone", "size" : "20x20", "scale" : "2x", "filename" : "Icon-App-20x20@2x.png" },
+              { "idiom" : "iphone", "size" : "20x20", "scale" : "3x", "filename" : "Icon-App-20x20@3x.png" },
+              { "idiom" : "iphone", "size" : "29x29", "scale" : "2x", "filename" : "Icon-App-29x29@2x.png" },
+              { "idiom" : "iphone", "size" : "29x29", "scale" : "3x", "filename" : "Icon-App-29x29@3x.png" },
+              { "idiom" : "iphone", "size" : "40x40", "scale" : "2x", "filename" : "Icon-App-40x40@2x.png" },
+              { "idiom" : "iphone", "size" : "40x40", "scale" : "3x", "filename" : "Icon-App-40x40@3x.png" },
+              { "idiom" : "iphone", "size" : "60x60", "scale" : "2x", "filename" : "Icon-App-60x60@2x.png" },
+              { "idiom" : "iphone", "size" : "60x60", "scale" : "3x", "filename" : "Icon-App-60x60@3x.png" },
+              { "idiom" : "ipad", "size" : "20x20", "scale" : "1x", "filename" : "Icon-App-20x20@1x.png" },
+              { "idiom" : "ipad", "size" : "20x20", "scale" : "2x", "filename" : "Icon-App-20x20@2x-1.png" },
+              { "idiom" : "ipad", "size" : "29x29", "scale" : "1x", "filename" : "Icon-App-29x29@1x.png" },
+              { "idiom" : "ipad", "size" : "29x29", "scale" : "2x", "filename" : "Icon-App-29x29@2x-1.png" },
+              { "idiom" : "ipad", "size" : "40x40", "scale" : "1x", "filename" : "Icon-App-40x40@1x.png" },
+              { "idiom" : "ipad", "size" : "40x40", "scale" : "2x", "filename" : "Icon-App-40x40@2x-1.png" },
+              { "idiom" : "ipad", "size" : "76x76", "scale" : "1x", "filename" : "Icon-App-76x76@1x.png" },
+              { "idiom" : "ipad", "size" : "76x76", "scale" : "2x", "filename" : "Icon-App-76x76@2x.png" },
+              { "idiom" : "ipad", "size" : "83.5x83.5", "scale" : "2x", "filename" : "Icon-App-83.5x83.5@2x.png" },
+              { "idiom" : "ios-marketing", "size" : "1024x1024", "scale" : "1x", "filename" : "Icon-App-1024x1024@1x.png" }
+            ],
+            "info" : {
+              "author" : "xcode",
+              "version" : 1
+            }
+          }
+          JSON
+
+          resize_icon() {
+            local size="$1"
+            local out="$2"
+            sips -z "${size}" "${size}" "${SRC_ICON}" --out "${APPICON_DIR}/${out}" >/dev/null
+          }
+
+          resize_icon 40   "Icon-App-20x20@2x.png"
+          resize_icon 60   "Icon-App-20x20@3x.png"
+          resize_icon 58   "Icon-App-29x29@2x.png"
+          resize_icon 87   "Icon-App-29x29@3x.png"
+          resize_icon 80   "Icon-App-40x40@2x.png"
+          resize_icon 120  "Icon-App-40x40@3x.png"
+          resize_icon 120  "Icon-App-60x60@2x.png"
+          resize_icon 180  "Icon-App-60x60@3x.png"
+          resize_icon 20   "Icon-App-20x20@1x.png"
+          resize_icon 40   "Icon-App-20x20@2x-1.png"
+          resize_icon 29   "Icon-App-29x29@1x.png"
+          resize_icon 58   "Icon-App-29x29@2x-1.png"
+          resize_icon 40   "Icon-App-40x40@1x.png"
+          resize_icon 80   "Icon-App-40x40@2x-1.png"
+          resize_icon 76   "Icon-App-76x76@1x.png"
+          resize_icon 152  "Icon-App-76x76@2x.png"
+          resize_icon 167  "Icon-App-83.5x83.5@2x.png"
+          resize_icon 1024 "Icon-App-1024x1024@1x.png"
+
       - name: Build archive (unsigned)
         shell: bash
         run: |
