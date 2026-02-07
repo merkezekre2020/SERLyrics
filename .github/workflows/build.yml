@@ -1,9 +1,13 @@
-name: iOS Unsigned Build
+name: iOS IPA Release
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -46,13 +50,15 @@ jobs:
             SCHEME_NAME="${CONTAINER_NAME}"
           fi
 
-          BUILD_DIR="${RUNNER_TEMP}/build"
+          ARCHIVE_PATH="${RUNNER_TEMP}/SERLyric.xcarchive"
+          IPA_DIR="${RUNNER_TEMP}/ipa"
           echo "container_flag=${CONTAINER_FLAG}" >> "$GITHUB_OUTPUT"
           echo "container_path=${CONTAINER_PATH}" >> "$GITHUB_OUTPUT"
           echo "scheme=${SCHEME_NAME}" >> "$GITHUB_OUTPUT"
-          echo "build_dir=${BUILD_DIR}" >> "$GITHUB_OUTPUT"
+          echo "archive_path=${ARCHIVE_PATH}" >> "$GITHUB_OUTPUT"
+          echo "ipa_dir=${IPA_DIR}" >> "$GITHUB_OUTPUT"
 
-      - name: Unsigned build
+      - name: Build archive (unsigned)
         shell: bash
         run: |
           set -euo pipefail
@@ -60,33 +66,55 @@ jobs:
             "${{ steps.resolve.outputs.container_flag }}" "${{ steps.resolve.outputs.container_path }}" \
             -scheme "${{ steps.resolve.outputs.scheme }}" \
             -configuration Release \
-            -sdk iphonesimulator \
-            -destination "generic/platform=iOS Simulator" \
-            -derivedDataPath "${{ steps.resolve.outputs.build_dir }}" \
+            -destination "generic/platform=iOS" \
+            -archivePath "${{ steps.resolve.outputs.archive_path }}" \
+            SKIP_INSTALL=NO \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            build
+            CODE_SIGN_IDENTITY="" \
+            archive
 
-      - name: Package .app artifact
+      - name: Package unsigned IPA
         id: package
         shell: bash
         run: |
           set -euo pipefail
-          APP_PATH="$(find "${{ steps.resolve.outputs.build_dir }}" -type d -name "*.app" | head -n 1)"
+          APP_PATH="$(find "${{ steps.resolve.outputs.archive_path }}/Products/Applications" -maxdepth 1 -type d -name "*.app" | head -n 1)"
           if [[ -z "${APP_PATH}" ]]; then
-            echo "No .app produced by build."
+            echo "No .app found in archive."
             exit 1
           fi
 
-          ARTIFACT_DIR="${RUNNER_TEMP}/artifacts"
-          mkdir -p "${ARTIFACT_DIR}"
-          cp -R "${APP_PATH}" "${ARTIFACT_DIR}/"
-          ditto -c -k --sequesterRsrc --keepParent "${APP_PATH}" "${ARTIFACT_DIR}/SERLyric.app.zip"
+          IPA_DIR="${{ steps.resolve.outputs.ipa_dir }}"
+          rm -rf "${IPA_DIR}"
+          mkdir -p "${IPA_DIR}/Payload"
+          cp -R "${APP_PATH}" "${IPA_DIR}/Payload/"
+          (cd "${IPA_DIR}" && ditto -c -k --sequesterRsrc --keepParent Payload SERLyric-unsigned.ipa)
 
-          echo "artifact_dir=${ARTIFACT_DIR}" >> "$GITHUB_OUTPUT"
+          echo "ipa_path=${IPA_DIR}/SERLyric-unsigned.ipa" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare release metadata
+        id: release_meta
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="ci-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          NAME="CI IPA ${GITHUB_RUN_NUMBER} (${GITHUB_SHA:0:7})"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "name=${NAME}" >> "$GITHUB_OUTPUT"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ios-unsigned-build
-          path: ${{ steps.package.outputs.artifact_dir }}
+          name: ios-unsigned-ipa
+          path: ${{ steps.package.outputs.ipa_path }}
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_meta.outputs.tag }}
+          name: ${{ steps.release_meta.outputs.name }}
+          generate_release_notes: true
+          prerelease: true
+          files: |
+            ${{ steps.package.outputs.ipa_path }}
